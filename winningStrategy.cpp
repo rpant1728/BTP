@@ -44,7 +44,7 @@ class Game{
         list <int> *adj;
         list <int> *predecessorList; 
         int *successorCount;
-        vector <PW> minPWs;
+        vector <vector <PW> > minPWs;
         unordered_set <int> explored;
 
         unordered_set<int> notWinningSet;
@@ -59,6 +59,7 @@ class Game{
             adj = new list<int>[v];
             predecessorList = new list<int>[v];
             successorCount=new int[v];
+            minPWs = *(new vector <vector <PW> > (v));
             memset(successorCount, 0, sizeof(successorCount));
         }
 
@@ -113,15 +114,54 @@ class Game{
         void exploreAllPathsUtil(int u, int start, Node *node, vector <int> &visited, list <int> &currentPlayer2Nodes, int successor, list <int> &path){
             if(visited[u]) return;
             visited[u] = 1;
-            // cout << "Path: ";
-            // for(int i: path){
-            //     cout << i << " ";
-            // }
-            // cout << endl;
+            cout << "Path: ";
+            for(int i: path){
+                cout << i << " ";
+            }
+            cout << endl;
             for(int v: adj[u]){
-                if(explored.find(v) != explored.end()){
-                    
-                }
+                // if(explored.find(v) != explored.end()){
+                //     cout << u << " " << v << endl;
+                //     Node *node1 = nodeMap[v];
+                //     if(!node1->isPlayer1) currentPlayer2Nodes.push_back(v);
+                //     for(int i=0; i<minPWs[v].size(); i++){
+                //         bool isCycle = false;
+                //         list <int> temp(currentPlayer2Nodes.begin(), currentPlayer2Nodes.end());
+                //         string s = "";
+                //         unordered_set <int> nodes;
+                //         for(int j: temp){
+                //             nodes.insert(j);
+                //             s += to_string(j) + "~";
+                //         }
+                //         if(minPWs[v][i].nodes.size() != 0){
+                //             bool flag = true;
+                //             for(int k: minPWs[v][i].nodes){
+                //                 cout << k << " ";
+                //                 if(k == v) {
+                //                     if(minPWs[v][i].isCycle) isCycle = true;
+                //                     else flag = false;
+                //                     break;
+                //                 }
+                //                 if(nodes.find(k) != nodes.end()){
+                //                     flag = false;
+                //                     break;
+                //                 }
+                //                 s += to_string(k) + "~";
+                //                 temp.push_back(k);
+                //             }
+                //             cout << endl;
+                //             if(node->uniquePWs.find(s) == node->uniquePWs.end() && flag) {
+                //                 cout << s << endl;
+                //                 PW *pw = new PW(temp, successor, isCycle); 
+                //                 node->uniquePWs.insert(s);
+                //                 node->pws.push_back(*pw);
+                //             } 
+                //         }
+                //     }
+                //     if(!node1->isPlayer1) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
+                //     visited[u] = 0;
+                //     return;
+                // }
                 if(unSafeSet.find(v) != unSafeSet.end()){
                     visited[u] = 0;
                     return;
@@ -231,7 +271,7 @@ class Game{
                 if(check) {
                     if(uniqueMinPW.find(s) == uniqueMinPW.end()){
                         uniqueMinPW.insert(s);
-                        minPWs.push_back(nodeMap[u]->pws[i]);
+                        minPWs[u].push_back(nodeMap[u]->pws[i]);
                     }
                 }
             }
@@ -268,7 +308,7 @@ int main(){
     }  
     cout << endl;
 
-    for(int i=0; i<v; i++){
+    for(int i=0; i<3; i++){
         Node *node = game.nodeMap[i];
         if(node->isPlayer1){
             game.exploreAllPaths(i);
@@ -281,11 +321,13 @@ int main(){
     cout << "Minimal Potential Winning Sets" << endl;
     if (game.minPWs.size() != 0){
         for(int i=0; i<game.minPWs.size(); i++){
-            if(game.minPWs[i].nodes.size() != 0){
-                for(int j: game.minPWs[i].nodes){
-                    cout << j << " ";
+            for(int j=0; j<game.minPWs[i].size(); j++){
+                if(game.minPWs[i][j].nodes.size() != 0){
+                    for(int k: game.minPWs[i][j].nodes){
+                        cout << k << " ";
+                    }
+                    cout << endl;
                 }
-                cout << endl;
             }
         }
     }  
