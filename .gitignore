@@ -1,2 +1,4 @@
 .vscode/
+outputs/
+inputs/random_input.txt
 a.out

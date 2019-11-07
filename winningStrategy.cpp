@@ -121,7 +121,6 @@ class Game{
             cout << endl;
             for(int v: adj[u]){
                 // if(explored.find(v) != explored.end()){
-                //     cout << u << " " << v << endl;
                 //     Node *node1 = nodeMap[v];
                 //     if(!node1->isPlayer1) currentPlayer2Nodes.push_back(v);
                 //     for(int i=0; i<minPWs[v].size(); i++){
@@ -136,7 +135,6 @@ class Game{
                 //         if(minPWs[v][i].nodes.size() != 0){
                 //             bool flag = true;
                 //             for(int k: minPWs[v][i].nodes){
-                //                 cout << k << " ";
                 //                 if(k == v) {
                 //                     if(minPWs[v][i].isCycle) isCycle = true;
                 //                     else flag = false;
@@ -149,9 +147,7 @@ class Game{
                 //                 s += to_string(k) + "~";
                 //                 temp.push_back(k);
                 //             }
-                //             cout << endl;
                 //             if(node->uniquePWs.find(s) == node->uniquePWs.end() && flag) {
-                //                 cout << s << endl;
                 //                 PW *pw = new PW(temp, successor, isCycle); 
                 //                 node->uniquePWs.insert(s);
                 //                 node->pws.push_back(*pw);
@@ -163,10 +159,9 @@ class Game{
                 //     return;
                 // }
                 if(unSafeSet.find(v) != unSafeSet.end()){
-                    visited[u] = 0;
-                    return;
+                    continue;
                 }
-                if(winningSet.find(v) != winningSet.end()){
+                else if(winningSet.find(v) != winningSet.end()){
                     Node* node1 = nodeMap[v];
                     string s = "";
                     if(!node1->isPlayer1) currentPlayer2Nodes.push_back(v);
@@ -215,6 +210,9 @@ class Game{
             vector <int> visited(vertices, 0);
             visited[u] = 1;
             for(int v: adj[u]){
+                if(unSafeSet.find(v) != unSafeSet.end()){
+                    continue;
+                }
                 path.push_back(v);
                 Node *node1 = nodeMap[v];
                 if(!node1->isPlayer1) currentPlayer2Nodes.push_back(v);
@@ -307,10 +305,15 @@ int main(){
         cout << i << " ";
     }  
     cout << endl;
+    cout << "Unsafe Set" << endl;
+    for(int i: game.unSafeSet){
+        cout << i << " ";
+    }  
+    cout << endl;
 
-    for(int i=0; i<3; i++){
+    for(int i=0; i<v; i++){
         Node *node = game.nodeMap[i];
-        if(node->isPlayer1){
+        if(node->isPlayer1 && node->isSafe){
             game.exploreAllPaths(i);
             game.getMinimalPWs(i);
             game.explored.insert(i);
