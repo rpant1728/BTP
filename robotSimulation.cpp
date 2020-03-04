@@ -13,11 +13,11 @@ using namespace std;
 
 class PW {
     public:
-        list <int> nodes;
-        int successor;
+        list <string> nodes;
+        string successor;
         bool isCycle;
 
-        PW(list <int> player2Nodes, int succ, bool c){
+        PW(list <string> player2Nodes, string succ, bool c){
             nodes = player2Nodes;
             successor = succ;
             isCycle = c;
@@ -27,122 +27,112 @@ class PW {
 class Node {
     public:
         bool isSafe;
-        bool isPlayer1;
         bool isWinning;
         int i1;
         int i2;
         int j1;
         int j2;
         int k;
+        bool turn;
         unordered_map <string, PW> pws;
+        string id;
 
-        Node(int _i1,int _i2,int _j1,int _j2,int _k,bool s, bool p){
-            i1=_i1;
-            i2=_i2;
-            j1=_j1;
-            j2=_j2;
-            k=_k;
-            isSafe = s;
-            isPlayer1 = p;
+        Node(int _i1,int _i2,int _j1,int _j2,int _k, bool _t){
+            i1 = _i1;
+            i2 = _i2;
+            j1 = _j1;
+            j2 = _j2;
+            k = _k;
+            turn = _t;
+            isSafe = false;
             isWinning = false;
+            string s = to_string(i1)+"~"+to_string(j1)+"~"+to_string(i2)+"~"+to_string(j2)+"~"+to_string(_k)+"~";
+            if(_t) id = s+"0";
+            else id = s+"1";
         }
 };
 
 class Game{
     public:
-        int vertices;
-        int edges;
-        unordered_map <int, Node*> nodeMap;
-        list <int> *adj;
-        list <int> *predecessorList; 
+        unordered_map <string, Node*> nodeMap;
+        unordered_map <string, list <string> > adj;
+
+        unordered_map <string, list <string> > predecessorList; 
+        unordered_map <string, int> successorCount;
+
+        unordered_set <string> notWinningSet;
+        unordered_set <string> winningSet;
+        unordered_set <string> player1Nodes;
+        unordered_set <string> safeSet;
+
+        unordered_map <string, PW> pws;
+        unordered_map <string, PW> minPWs;
+
+        unordered_set <string> explored;
         bool optimization;
-        int *successorCount;
-        unordered_map <int, unordered_map <string, PW> > pws;
-        unordered_map <int, unordered_map <string, PW> > minPWs;
-        unordered_set <int> explored;
 
-        unordered_set<int> notWinningSet;
-        unordered_set<int> winningSet;
-        unordered_set<int> player1Nodes;
-        unordered_set<int> unSafeSet;
-
-        Game(int v, int e, bool opt){
-            vertices = v;
-            edges = e;
+        Game(bool opt){
             optimization = opt;
-            adj = new list<int>[v];
-            predecessorList = new list<int>[v];
-            successorCount=new int[v];
-            memset(successorCount, 0, sizeof(successorCount));
         }
 
-        void setNode(int id, int _i1,int _i2,int _j1,int _j2, int _k, bool isSafe, bool isPlayer1){
-            nodeMap[id] = new Node(_i1,_i2,_j1,_j2,_k,isSafe, isPlayer1);
-            if(!isSafe){
-                unSafeSet.insert(id);
-            }
-            if(isPlayer1){
+        void setNode( int _i1,int _i2,int _j1,int _j2, int _k, bool _turn){
+            string id=to_string(_i1)+"~"+to_string(_j1)+"~"+to_string(_i2)+"~"+to_string(_j2)+"~"+to_string(_k)+"~"+to_string(_turn);
+            nodeMap[id] = new Node(_i1,_i2,_j1,_j2,_k, _turn);
+            // if(!isSafe){******************
+            //     unSafeSet.insert(id);
+            // }
+            if(_turn){
                 player1Nodes.insert(id);
             }
+            adj[id]=list<string>();
+            predecessorList[id]=list<string>();
         }
 
-        void addMove(int u, int v){
+        void addMove(string u, string v){
             adj[u].push_back(v);
         }
 
-        void BFS(int s){ 
-            // Mark all the vertices as not visited 
-            bool *visited = new bool[V]; 
-            for(int i = 0; i < V; i++) 
-                visited[i] = false; 
+        void BFS(string s){ 
+            list <string> queue; 
+            unordered_map <string, bool> visited;
+            for(auto x: nodeMap){
+                visited.insert({x.first, false});
+            }
         
-            // Create a queue for BFS 
-            list<int> queue; 
-        
-            // Mark the current node as visited and enqueue it 
             visited[s] = true; 
             queue.push_back(s); 
         
-            // 'i' will be used to get all adjacent 
-            // vertices of a vertex 
-            list<int>::iterator i; 
-        
             while(!queue.empty()){ 
-                // Dequeue a vertex from queue and print it 
                 s = queue.front(); 
-                cout << s << " "; 
                 queue.pop_front(); 
-        
-                // Get all adjacent vertices of the dequeued 
-                // vertex s. If a adjacent has not been visited,  
-                // then mark it visited and enqueue it 
-                for (i = adj[s].begin(); i != adj[s].end(); ++i){ 
-                    if (!visited[*i]){ 
-                        visited[*i] = true; 
-                        queue.push_back(*i); 
+                for(auto i: adj[s]){
+                    if (!visited[i]){ 
+                        visited[i] = true; 
+                        safeSet.insert(i);
+                        queue.push_back(i); 
                     } 
                 } 
             } 
         } 
 
         void initializePropagate(){
-            for(int i=0; i<vertices; i++){
-                for(int j: adj[i]){
-                    predecessorList[j].push_back(i);
-                    successorCount[i]++;
+            for(auto i:adj){
+                for(string j: i.second){
+                    predecessorList[j].push_back(i.first);
+                    successorCount[i.first]++;
                 }
             }
-            for(int i: unSafeSet){
+            for(string i: unSafeSet){
                 propagate(i);
             }
         }
 
-        void propagate(int v){
+        void propagate(string v){
             if(notWinningSet.find(v) != notWinningSet.end()){
                 return;
             }
             notWinningSet.insert(v);
-            for(int u: predecessorList[v]){
+            for(string u: predecessorList[v]){
                 successorCount[u]--;
                 if(player1Nodes.find(u) == player1Nodes.end() || successorCount[u] == 0){
                     propagate(u);
@@ -151,15 +141,15 @@ class Game{
         }
 
         void findWinningSet(){
-            for(int i=0;i<vertices;i++){
-                if(notWinningSet.find(i)==notWinningSet.end()){
-                    winningSet.insert(i);
+            for(auto i: adj){
+                if(notWinningSet.find(i.first)==notWinningSet.end()){
+                    winningSet.insert(i.first);
                 }
             }
         }
         
-        bool checkPotentiallyWinning(list <int> nodes){
-            for(int i: nodes){
+        bool checkPotentiallyWinning(list <string> nodes){
+            for(string i: nodes){
                 if(winningSet.find(i) == winningSet.end()){
                     return true;
                 }
@@ -167,30 +157,30 @@ class Game{
             return false;
         }
 
-        void exploreAllPathsUtil(int u, int start, Node *node, vector <int> &visited, list <int> &currentPlayer2Nodes, int successor, list <int> &path){
-            if(visited[u]) return;
-            visited[u] = 1;
+        void exploreAllPathsUtil(string u, string start, Node *node, unordered_set <string> &visited, list <string> &currentPlayer2Nodes, string successor, list <string> &path){
+            if(visited.find(u) != visited.end()) return;
+            visited.insert(u);
             // cout << "Path: ";
             // for(int i: path){
             //     cout << i << " ";
             // }
             // cout << endl;
-            for(int v: adj[u]){
+            for(string v: adj[u]){
                 if(optimization && explored.find(v) != explored.end()){
                     Node *node1 = nodeMap[v];
-                    if(!node1->isPlayer1) currentPlayer2Nodes.push_back(v);
-                    for(pair<string, PW> x: minPWs[v]) {
+                    if(!node1->turn) currentPlayer2Nodes.push_back(v);
+                    for(pair<string, PW> x: minPWs) {
                         bool isCycle = false;
-                        list <int> temp(currentPlayer2Nodes.begin(), currentPlayer2Nodes.end());
+                        list <string> temp(currentPlayer2Nodes.begin(), currentPlayer2Nodes.end());
                         string s = "";
-                        unordered_set <int> nodes;
-                        for(int j: temp){
+                        unordered_set <string> nodes;
+                        for(string j: temp){
                             nodes.insert(j);
-                            s += to_string(j) + "~";
+                            s += j + "^";
                         }
                         if(x.second.nodes.size() != 0){
                             bool flag = true;
-                            for(int k: x.second.nodes){
+                            for(string k: x.second.nodes){
                                 if(k == v) {
                                     if(x.second.isCycle) isCycle = true;
                                     else flag = false;
@@ -200,19 +190,19 @@ class Game{
                                     flag = false;
                                     break;
                                 }
-                                s += to_string(k) + "~";
+                                s += k + "^";
                                 temp.push_back(k);
                             }
                             if(flag && checkPotentiallyWinning(temp)){
                                 PW *pw = new PW(temp, successor, isCycle);
-                                s += to_string(pw->successor); 
+                                s += pw->successor; 
                                 if(node->pws.find(s) == node->pws.end()) {
                                     node->pws.insert({s, *pw});
                                 } 
                             }
                         }
                     }
-                    if(!node1->isPlayer1) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
+                    if(!node1->turn) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
                     continue;
                 }
                 if(unSafeSet.find(v) != unSafeSet.end()){
@@ -221,64 +211,64 @@ class Game{
                 else if(winningSet.find(v) != winningSet.end()){
                     Node* node1 = nodeMap[v];
                     string s = "";
-                    if(!node1->isPlayer1) currentPlayer2Nodes.push_back(v);
-                    for(int i: currentPlayer2Nodes){
-                        s += to_string(i) + "~";
+                    if(!node1->turn) currentPlayer2Nodes.push_back(v);
+                    for(string i: currentPlayer2Nodes){
+                        s += i + "^";
                     }
                     if(currentPlayer2Nodes.size() != 0 && checkPotentiallyWinning(currentPlayer2Nodes)) {
                         PW *pw = new PW(currentPlayer2Nodes, successor, false);
-                        s += to_string(pw->successor);
+                        s += pw->successor;
                         if(node->pws.find(s) == node->pws.end()){
                             node->pws.insert({s, *pw});
                         }
                     }
-                    if(!node1->isPlayer1) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
+                    if(!node1->turn) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
                 }
-                else if(visited[v] != 1){
+                else if(visited.find(v) == visited.end()){
                     Node *node1 = nodeMap[v];
                     path.push_back(v);
-                    if(!node1->isPlayer1){
+                    if(!node1->turn){
                         currentPlayer2Nodes.push_back(v);
                     }
                     exploreAllPathsUtil(v, start, node, visited, currentPlayer2Nodes, successor, path);
-                    if(!node1->isPlayer1) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
+                    if(!node1->turn) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
                     path.erase(prev(path.end()));
                 }
                 else{
                     string s = "";
-                    for(int i: currentPlayer2Nodes){
-                        s += to_string(i) + "~";
+                    for(string i: currentPlayer2Nodes){
+                        s += i + "^";
                     }
                     if(currentPlayer2Nodes.size() != 0 && checkPotentiallyWinning(currentPlayer2Nodes)) {
                         bool isCycle = false;
                         if(v == start) isCycle = true;
                         PW *pw = new PW(currentPlayer2Nodes, successor, isCycle);
-                        s += to_string(pw->successor);
+                        s += pw->successor;
                         if(node->pws.find(s) == node->pws.end()){
                             node->pws.insert({s, *pw});
                         }
                     } 
                 }
             }
-            visited[u] = 0;
+            visited.insert(u);
         }
 
-        void exploreAllPaths(int u){
+        void exploreAllPaths(string u){
             Node *node = nodeMap[u];
-            list <int> currentPlayer2Nodes, path;
+            list <string> currentPlayer2Nodes, path;
             path.push_back(u);
-            if(!node->isPlayer1) currentPlayer2Nodes.push_back(u);
-            vector <int> visited(vertices, 0);
-            visited[u] = 1;
-            for(int v: adj[u]){
+            if(!node->turn) currentPlayer2Nodes.push_back(u);
+            unordered_set <string> visited;
+            visited.insert(u);
+            for(string v: adj[u]){
                 if(unSafeSet.find(v) != unSafeSet.end()){
                     continue;
                 }
                 path.push_back(v);
                 Node *node1 = nodeMap[v];
-                if(!node1->isPlayer1) currentPlayer2Nodes.push_back(v);
+                if(!node1->turn) currentPlayer2Nodes.push_back(v);
                 exploreAllPathsUtil(v, u, node, visited, currentPlayer2Nodes, v, path);
-                if(!node1->isPlayer1) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
+                if(!node1->turn) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
                 path.erase(prev(path.end()));
             }
             cout << "Potentially Winning Sets from node " << u << endl;
@@ -286,7 +276,7 @@ class Game{
                 for(pair<string, PW> x: node->pws) {
                     if(x.second.isCycle) cout << "Cycle: ";
                     else cout << "Lasso: ";
-                    for(int j: x.second.nodes){
+                    for(string j: x.second.nodes){
                         cout << j << " ";
                     }
                     cout << endl;
@@ -295,13 +285,13 @@ class Game{
             else cout << "None" << endl;
         }
 
-        void getMinimalPWs(int u){
+        void getMinimalPWs(string u){
             for(pair<string, PW> x: nodeMap[u]->pws) {
                 bool isCycle = x.second.isCycle;
                 bool check = true;
                 string s = "";
-                for(int i: x.second.nodes){
-                    s += to_string(i) + "~";
+                for(string i: x.second.nodes){
+                    s += i + "`";
                 }
                 for(pair<string, PW> y: nodeMap[u]->pws) {
                     if(x.first == y.first || x.second.successor != y.second.successor || x.second.nodes.size() <= y.second.nodes.size() 
@@ -326,8 +316,8 @@ class Game{
                     }
                 }
                 if(check) {
-                    if(minPWs[u].find(s) == minPWs[u].end()){
-                        minPWs[u].insert({s, x.second});
+                    if(minPWs.find(s) == minPWs.end()){
+                        minPWs.insert({s, x.second});
                     }
                 }
             }
@@ -339,30 +329,55 @@ int main(int argc, char *argv[]){
     bool optimization = false;
     if(argc == 2) optimization = true;
 
-    int n, k, p;
-    cin >> n >> k >> p;
+    int n, m, k, p;
+    cin >> n >> m >> k >> p;
     unordered_set <string> obstacles;
     for(int i=0; i<p; i++){
         int x, y;
         cin >> x >> y;
         obstacles.insert(to_string(x) + "~" + to_string(y));
     }
-
+    int x1, y1, x2, y2, x3, y3;
+    cin >> x1 >> y1 >> x2 >> y2 >> x3 >> y3;
+    
+    Game game(optimization);
 
     for(int l=0; l<k; l++){
         for(int i1=0; i1<n; i1++){
-            for(int j1=0; j1<n; j1++){
+            for(int j1=0; j1<m; j1++){
                 for(int i2=0; i2<n; i2++){
-                    for(int j2=0; j2<n; j2++){
-                        if(i1 != i2 || j1 != j2){
+                    for(int j2=0; j2<m; j2++){
+                        if(i1 != i2 || j1 != j2){  //**********************
                             vector <pair <int, int>> possible{{0,1}, {1,0}, {-1,0}, {0,-1}};
-                            for(int m=0;m<4;m++){
-                                for(int n=0;n<4;n++){
-                                    string temp = to_string(i1+possible[m].first) + "~" + to_string(j1+possible[m].second);
-                                    string temp1 = to_string(i2+possible[n].first) + "~" + to_string(j1+possible[n].second);
-                                    if(obstacles.find(temp) == obstacles.end() && obstacles.find(temp1) == obstacles.end()){
-                                        game.addMove();
+                            string currPlayer1 = to_string(i1) + "~" + to_string(j1);
+                            string currPlayer2 = to_string(i2) + "~" + to_string(j2);
+                            if(obstacles.find(currPlayer1) != obstacles.end() || obstacles.find(currPlayer2) != obstacles.end()){
+                                continue;
+                            }
+                            string currState1 = currPlayer1 + "~" + currPlayer2 + "~" + to_string(l) + "~0";
+                            string currState2 = currPlayer1 + "~" + currPlayer2 + "~" + to_string(l) + "~1";
+                            if(game.nodeMap.find(currState1) == game.nodeMap.end()){
+                                game.setNode(i1,j1,i2,j2,k,false);
+                            }
+                            if(game.nodeMap.find(currState2) == game.nodeMap.end()){
+                                game.setNode(i1,j1,i2,j2,k,true);
+                            }
+                            for(int o=0;o<4; o++){
+                                string nextPlayer1 = to_string(i1+possible[o].first) + "~" + to_string(j1+possible[o].second);
+                                if(obstacles.find(nextPlayer1) == obstacles.end()){
+                                    string nextState1 = nextPlayer1+"~"+currPlayer2+"~"+to_string(l+1)+"~1";
+                                    if(game.nodeMap.find(nextState1) == game.nodeMap.end()){
+                                        game.setNode(i1,j1,i2,j2,k,false);
                                     }
+                                    game.addMove(currState1, nextState1);
+                                }
+                                string nextPlayer2 = to_string(i2+possible[o].first) + "~" + to_string(j2+possible[o].second);
+                                if(obstacles.find(nextPlayer2) == obstacles.end()){
+                                    string nextState2 = currPlayer1+"~"+nextPlayer2+"~"+to_string(l+1)+"~0";
+                                    if(game.nodeMap.find(nextState2) == game.nodeMap.end()){
+                                        game.setNode(i1,j1,i2,j2,k,true);
+                                    }
+                                    game.addMove(currState2, nextState2);
                                 }
                             }
                         }
@@ -372,71 +387,46 @@ int main(int argc, char *argv[]){
         }
     }
 
-    Game game(v, e, optimization);
-
-    for(int i=0; i<v; i++){
-        int id, p, s;
-        bool player, isSafe = false;
-        cin >> id >> p >> s;
-        if (p == 1) player = true;
-        else if (p == 2) player = false;
-        if(s) isSafe = true;
-        game.setNode(id, isSafe, player);
-    }
-
-    for(int i=0; i<e; i++){
-        int node1, node2;
-        cin >> node1 >> node2;
-        game.addMove(node1, node2);
-    }
-
     game.initializePropagate();
     game.findWinningSet();
 
     cout << "Winning Set" << endl;
-    for(int i: game.winningSet){
+    for(string i: game.winningSet){
         cout << i << " ";
     }  
     cout << endl;
     cout << "Unsafe Set" << endl;
-    for(int i: game.unSafeSet){
+    for(string i: game.unSafeSet){
         cout << i << " ";
     }  
     cout << endl;
     int count = 0;
-    for(int i=0; i<v; i++){
-        Node *node = game.nodeMap[i];
-        if(node->isPlayer1 && node->isSafe){
+    for(auto n: game.nodeMap){
+        Node *node = n.second;
+        if(node->turn && node->isSafe){
             count++;
         }
     }
-    cout << "Valid Player 1 nodes:- " << count << endl;
 
-    count = 0;
-    for(int i=0; i<v; i++){
-        Node *node = game.nodeMap[i];
-        if(node->isPlayer1 && node->isSafe && game.winningSet.find(i) == game.winningSet.end()){
-            count++;
-            game.exploreAllPaths(i);
-            game.getMinimalPWs(i);
-            game.explored.insert(i);
-            if(count%10 == 0) cout << count << " explored" << endl;
-        } 
-    }
+    string startState = to_string(x1)+"~"+to_string(y1)+"~"+to_string(x2)+"~"+to_string(y2)+"~0~0";
+    Node *node = game.nodeMap[startState];
+    if(node->isSafe && game.winningSet.find(startState) == game.winningSet.end()){
+        game.exploreAllPaths(startState);
+        game.getMinimalPWs(startState);
+        game.explored.insert(startState);
+    } 
 
     cout << "Minimal Potential Winning Sets" << endl;
     if (game.minPWs.size() != 0){
-        for(pair<int, unordered_map<string, PW>> x: game.minPWs) {
+        for(auto x: game.minPWs) {
             cout << "Vertex " << x.first << endl;
-            for(pair<string, PW> y: x.second) {
-                if(y.second.isCycle) cout << "Cycle: ";
-                else cout << "Lasso: ";
-                if(y.second.nodes.size() != 0){
-                    for(int k: y.second.nodes){
-                        cout << k << " ";
-                    }
-                    cout << endl;
+            if(x.second.isCycle) cout << "Cycle: ";
+            else cout << "Lasso: ";
+            if(x.second.nodes.size() != 0){
+                for(string k: x.second.nodes){
+                    cout << k << " ";
                 }
+                cout << endl;
             }
         }
     }  
