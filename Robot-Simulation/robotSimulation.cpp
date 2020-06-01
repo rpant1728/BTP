@@ -6,9 +6,9 @@
 # include <algorithm>
 # include <string.h>
 # include <ctime>
-#include <iostream>
-#include <fstream>
-#include <sstream> 
+# include <iostream>
+# include <fstream>
+# include <sstream> 
 
 using namespace std;
 
@@ -94,7 +94,6 @@ class Game{
             string id=to_string(_i1)+"~"+to_string(_j1)+"~"+to_string(_i2)+"~"+to_string(_j2)+"~"+to_string(_k);
             if(isValid(_i1, _j1, _i2, _j2, m, n)){
                 nodeMap[id] = new Node(_i1,_j1,_i2,_j2,_k, _s);
-                // cout << nodeMap[id]->id << " added!" << endl;
                 if(_k%2 == 0){
                     player1Nodes.insert(id);
                 }
@@ -109,44 +108,30 @@ class Game{
             }
         }
 
-        void reverseBFS(string v, int k){
-            predecessorList.clear();
-            successorCount.clear();
-            for(auto i:adj){
-                for(string j: i.second){
-                    predecessorList[j].push_back(i.first);
-                    // successorCount[i.first]++;
-                }
-            }
-            propagateBFS(v, 0, k);
-        }
-
-
-        void propagateBFS(string v, int i, int k){
-            if(safeSet.find(v) != safeSet.end() || i > 2*k){
-                return;
-            }
-            Node *node = nodeMap[v];
-            if(node->k+i <= 6){
-                safeSet.insert(v);
-                nodeMap[v]->isSafe=true;
-            }
-            // getMinSteps[node->i1][node->j1]=i;
-            for(string u: predecessorList[v]){
-                // successorCount[u]--;
-                // if(player1Nodes.find(u) == player1Nodes.end() || successorCount[u] == 0){
-                propagateBFS(u,i+1, k);
-                // }
-            }
-        }
-
-        void initializePropagate(){
+        void initializeReverseBFS(){
             for(auto i:adj){
                 for(string j: i.second){
                     predecessorList[j].push_back(i.first);
                     successorCount[i.first]++;
                 }
             }
+        }
+
+        void reverseBFS(string v, int i, int k){
+            if(safeSet.find(v) != safeSet.end() || i > 2*k){
+                return;
+            }
+            Node *node = nodeMap[v];
+            if(node->k+i <= 2*k){
+                safeSet.insert(v);
+                nodeMap[v]->isSafe=true;
+            }
+            for(string u: predecessorList[v]){
+                reverseBFS(u,i+1, k);
+            }
+        }
+
+        void initializePropagate(){
             for(string i: unSafeSet){
                 propagate(i);
             }
@@ -234,9 +219,9 @@ class Game{
                     continue;
                 }
                 else if(winningSet.find(v) != winningSet.end()){
-                    cout << v << endl;
                     Node* node1 = nodeMap[v];
                     string s = "";
+                    path.push_back(v);
                     if(!node1->turn) currentPlayer2Nodes.push_back(v);
                     for(string i: currentPlayer2Nodes){
                         s += i + "^";
@@ -249,6 +234,7 @@ class Game{
                         }
                     }
                     if(!node1->turn) currentPlayer2Nodes.erase(prev(currentPlayer2Nodes.end()));
+                    path.erase(prev(path.end()));
                 }
                 else if(visited.find(v) == visited.end()){
                     Node *node1 = nodeMap[v];
@@ -261,7 +247,7 @@ class Game{
                     path.erase(prev(path.end()));
                 }
                 else{
-                    cout << v << " ";
+                    path.push_back(v);
                     string s = "";
                     for(string i: currentPlayer2Nodes){
                         s += i + "^";
@@ -272,10 +258,10 @@ class Game{
                         PW *pw = new PW(currentPlayer2Nodes, successor, isCycle, path);
                         s += pw->successor;
                         if(node->pws.find(s) == node->pws.end()){
-                            // cout << "hjk" << endl;
                             node->pws.insert({s, *pw});
                         }
-                    } 
+                    }
+                    path.erase(prev(path.end())); 
                 }
             }
             visited.insert(u);
@@ -390,6 +376,9 @@ int main(int argc, char *argv[]){
                         vector <pair <int, int>> possible{{0,1}, {1,0}, {-1,0}, {0,-1}};
                         string currPlayer1 = to_string(i1) + "~" + to_string(j1);
                         string currPlayer2 = to_string(i2) + "~" + to_string(j2);
+                        // if(currPlayer1 == "3~2" && currPlayer2 == "1~3"){
+                        //     cout << l << endl;
+                        // }
                         if(obstacles.find(currPlayer1) != obstacles.end() || obstacles.find(currPlayer2) != obstacles.end()){
                             continue;
                         }
@@ -451,16 +440,30 @@ int main(int argc, char *argv[]){
         }
     }
 
+    game.initializeReverseBFS();
     for(auto i: game.winningSet){
-        game.reverseBFS(i, k);
+        game.reverseBFS(i, 0, k);
+    }
+
+    for(auto i: game.nodeMap){
+        if(game.safeSet.find(i.first) == game.safeSet.end()){
+            game.unSafeSet.insert(i.first);
+        }
     }
 
     game.initializePropagate();
     game.findWinningSet();
 
-    printSet(game.winningSet);
+    // printSet(game.winningSet);
 
-    cout << game.nodeMap.size() << " " << game.winningSet.size() << endl;
+    cout << game.nodeMap.size() << " " << game.winningSet.size() << " " << game.safeSet.size() << endl;
+
+    for(auto i: game.winningSet){
+        if(game.safeSet.find(i) == game.safeSet.end()){
+            cout << i << " ";
+        }
+    }
+    cout << endl;
     
     string startState = to_string(x1)+"~"+to_string(y1)+"~"+to_string(x2)+"~"+to_string(y2)+"~0";
     if(game.winningSet.find(startState) != game.winningSet.end()){
@@ -469,29 +472,38 @@ int main(int argc, char *argv[]){
     }
 
     Node *node = game.nodeMap[startState];
-
     if(node->isSafe){
         game.exploreAllPaths(startState);
         game.getMinimalPWs(startState);
     } 
-
+    ofstream outfile;
+    outfile.open("outputs/minimal_pws.txt", ios_base::app);
     cout << "Minimal Potential Winning Sets" << endl;
     if (game.minPWs.size() != 0){
         for(auto x: game.minPWs) {
-            // cout << "Vertex " << x.first << endl;
-            if(x.second.isCycle) cout << "Cycle: ";
-            else cout << "Lasso: ";
+            if(x.second.isCycle){
+                cout << "Cycle : ";
+                outfile << "Cycle : ";
+            }
+            else{
+                cout << "Lasso : ";
+                outfile << "Lasso : ";
+            } 
             if(x.second.nodes.size() != 0){
                 for(string k: x.second.nodes){
                     cout << k << " ";
+                    outfile << k << " ";
                 }
                 cout << ": ";
+                outfile << ": ";
             }
             if(x.second.path.size() != 0){
                 for(string k: x.second.path){
                     cout << k << " ";
+                    outfile << k << " ";
                 }
                 cout << endl;
+                outfile << endl;
             }
         }
     }  
@@ -500,8 +512,4 @@ int main(int argc, char *argv[]){
     clock_t clockTicksTaken = endTime - startTime;
     double timeInSeconds = clockTicksTaken / (double) CLOCKS_PER_SEC;
     cout << "Time taken:- " << timeInSeconds << " seconds." << endl;
-    
-    ofstream outfile;
-    outfile.open("outputs/runtimes.txt", ios_base::app);
-    outfile << timeInSeconds << endl;
 }
