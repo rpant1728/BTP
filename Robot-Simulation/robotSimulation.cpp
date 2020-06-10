@@ -486,6 +486,14 @@ class Game{
         }
 };
 
+// Output the time taken to run the program
+void output_runtime(clock_t startTime){
+    clock_t endTime = clock();
+    clock_t clockTicksTaken = endTime - startTime;
+    double timeInSeconds = clockTicksTaken / (double) CLOCKS_PER_SEC;
+    cout << "Time taken:- " << timeInSeconds << " seconds." << endl;
+}
+
 
 int main(int argc, char *argv[]){
     // Start clock to measure time
@@ -538,6 +546,7 @@ int main(int argc, char *argv[]){
     string startState = to_string(x1)+"~"+to_string(y1)+"~"+to_string(x2)+"~"+to_string(y2)+"~0";
     if(game.winningSet.find(startState) != game.winningSet.end()){
         cout << "Player 1 has a definite Winning Strategy!" << endl;
+        output_runtime(startTime);
         return 0;
     }
 
@@ -582,9 +591,5 @@ int main(int argc, char *argv[]){
     }  
     else cout << "None" << endl;
 
-    // Output the time taken to run the program
-    clock_t endTime = clock();
-    clock_t clockTicksTaken = endTime - startTime;
-    double timeInSeconds = clockTicksTaken / (double) CLOCKS_PER_SEC;
-    cout << "Time taken:- " << timeInSeconds << " seconds." << endl;
+    output_runtime(startTime);
 }

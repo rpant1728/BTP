@@ -1,4 +1,5 @@
-python3 input_generator.py
+# python3 input_generator.py
+input_file=$1
 g++ robotSimulation.cpp
-./a.out < ./inputs/random_input.txt
-python3 visualize.py ./inputs/random_input.txt ./outputs/minimal_pws.txt
+./a.out < ./inputs/$input_file
+python3 visualize.py ./inputs/$input_file ./outputs/minimal_pws.txt

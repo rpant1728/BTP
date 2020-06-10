@@ -1,3 +1,5 @@
+
+# Generates random inputs for Robot Simulation program
 import random
 
 SIZE = 10

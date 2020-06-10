@@ -334,6 +334,18 @@ class Game{
         }
 };
 
+// Output the time taken to run the program to the file 'outputs/runtimes.txt' and the cmd
+void get_runtime(clock_t startTime){
+    clock_t endTime = clock();
+    clock_t clockTicksTaken = endTime - startTime;
+    double timeInSeconds = clockTicksTaken / (double) CLOCKS_PER_SEC;
+    cout << "Time taken:- " << timeInSeconds << " seconds." << endl;
+    
+    ofstream outfile;
+    outfile.open("outputs/runtimes.txt", ios_base::app);
+    outfile << timeInSeconds << endl;
+}
+
 int main(int argc, char *argv[]){
     // Start clock to measure time
     clock_t startTime = clock();
@@ -378,6 +390,7 @@ int main(int argc, char *argv[]){
         } 
         else if(game.winningSet.find(i) != game.winningSet.end()){
             cout << "Player 1 has a definite Winning Strategy!" << endl;
+            get_runtime(startTime);
             return 0;
         }
     }
@@ -401,13 +414,5 @@ int main(int argc, char *argv[]){
     }  
     else cout << "None" << endl;
 
-    // Output the time taken to run the program to the file 'outputs/runtimes.txt' and the cmd
-    clock_t endTime = clock();
-    clock_t clockTicksTaken = endTime - startTime;
-    double timeInSeconds = clockTicksTaken / (double) CLOCKS_PER_SEC;
-    cout << "Time taken:- " << timeInSeconds << " seconds." << endl;
-    
-    ofstream outfile;
-    outfile.open("outputs/runtimes.txt", ios_base::app);
-    outfile << timeInSeconds << endl;
+    get_runtime(startTime);
 }
