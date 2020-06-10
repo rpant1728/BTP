@@ -1,0 +1,9 @@
+|V| |E|
+v1 1/2 (Player 1/ Player 2 node) 0/1 (Unsafe/Safe)
+... |V| nodes
+v1 v2
+... |E| edges
+
+Input consists of the number of vertices and edges, followed by a list of vertices and along with each vertex the information that
+whether it is a Player 1/ Player 2 node and whether it is Safe/Unsafe. This is followed by a list of edges consisting of a pair 
+of vertices. Each vertex is represented by an integer varying between 0 to |V|-1.

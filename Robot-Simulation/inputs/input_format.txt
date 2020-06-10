@@ -1,0 +1,14 @@
+m n k p
+x1 y1 x2 y2 xd yd
+ox1 oy1
+ox2 oy2
+....
+oxp oyp
+
+here, 
+m,n are the dimensions of the grid
+k is the number of steps allowed
+p is the number of obstacles
+(x1, y1) and (x2, y2) are the starting co-ordinates of Robot 1 and 2 respectively
+(xd, yd) is the target co-ordinate for Robot 1
+(oxi, oyi) is the co-ordinate of the ith obstacle

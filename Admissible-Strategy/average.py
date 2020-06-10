@@ -1,3 +1,5 @@
+# Reads the runtimes from the output file for multiple executions of the code to compute the average runtime.
+
 f = open("outputs/runtimes.txt", "r")
 lines = f.read().split("\n")
 sum1 = 0
